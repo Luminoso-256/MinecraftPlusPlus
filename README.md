@@ -1,5 +1,7 @@
 # Minecraft PlusPlus
 
+![screenshot](./readme/screenshot.png)
+
 ## What is it?
 
 Minecraft PlusPlus is a DLL mod for [Minecraft Plus](https://plus.minecraft.net).
