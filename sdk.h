@@ -8,4 +8,5 @@ namespace openGl {
 
 namespace user32 {
 	typedef void(__fastcall* RedrawWindow)();
+	typedef SHORT(__fastcall* GetKeyState)(int nVirtKey);
 }

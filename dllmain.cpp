@@ -14,6 +14,7 @@ openGl::glClear fpGlClear = NULL;
 openGl::glDisable fpGlDisable = NULL;
 openGl::glEnable fpGlEnable = NULL;
 user32::RedrawWindow fpRedrawWindow = NULL;
+user32::GetKeyState fpGetKeyState = NULL;
 
 //Detour functions (start with detour)
 void detourGlFlush(){
@@ -36,12 +37,18 @@ void detourRedrawWindow() {
     fpRedrawWindow();
 }
 
+SHORT detourGetKeyState(int nVirtKey) {
+    fpGlDisable();
+    SHORT keyState = fpGetKeyState(nVirtKey);
+    std::cout << "[Info] GetKeyState called for key " << nVirtKey << ". which has state " << keyState << "\n";
+    return keyState;
+}
+
 //the true entry point of the DLL for us
 void init() {
     //initialize our console window 
     BOOL f = AllocConsole();
     FILE* fpstdin = stdin, * fpstdout = stdout, * fpstderr = stderr;
-
     freopen_s(&fpstdin, "CONIN$", "r", stdin);
     freopen_s(&fpstdout, "CONOUT$", "w", stdout);
     freopen_s(&fpstderr, "CONOUT$", "w", stderr);
@@ -71,10 +78,13 @@ void init() {
     }
 
     if (MH_CreateHookApi(L"opengl32", "glDisable", &detourGlDisable, reinterpret_cast<LPVOID*>(&fpGlDisable)) != MH_OK) {
-        std::cout << "[Error] Creating glDisablehook failed! \n";
+        std::cout << "[Error] Creating glDisable hook failed! \n";
     }
     if (MH_CreateHookApi(L"user32", "RedrawWindow", &detourRedrawWindow, reinterpret_cast<LPVOID*>(&fpRedrawWindow)) != MH_OK) {
         std::cout << "[Error] Creating RedrawWindow hook failed! \n";
+    }
+    if (MH_CreateHookApi(L"user32", "GetKeyState", &detourGetKeyState, reinterpret_cast<LPVOID*>(&fpGetKeyState)) != MH_OK) {
+        std::cout << "[Error] Creating GetKeyState hook failed! \n";
     }
 
     std::cout << "[Info] Hook Initialization finished.";
