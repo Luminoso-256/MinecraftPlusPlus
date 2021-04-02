@@ -2,23 +2,42 @@
 #include "pch.h"
 #include <fstream>
 #include <MinHook.h>
-#include "typedefs.h"
+#include "sdk.h"
 #include <iostream>
 
 
-//Function Pointers (start with fp)
-LPVOID* fpGlFlush = NULL;
 
+
+//Function Pointers (start with fp)
+openGl::glFlush fpGlFlush = NULL;
+openGl::glClear fpGlClear = NULL;
+openGl::glDisable fpGlDisable = NULL;
+openGl::glEnable fpGlEnable = NULL;
+user32::RedrawWindow fpRedrawWindow = NULL;
 
 //Detour functions (start with detour)
 void detourGlFlush(){
-    std::cout << "[Info] glFlush called \n";
+    fpGlFlush();
 }
 
+void detourGlClear() {
+    fpGlClear();
+}
+
+void detourGlEnable() {
+    fpGlEnable();
+}
+
+void detourGlDisable() {
+    fpGlDisable();
+}
+
+void detourRedrawWindow() {
+    fpRedrawWindow();
+}
 
 //the true entry point of the DLL for us
 void init() {
- 
     //initialize our console window 
     BOOL f = AllocConsole();
     FILE* fpstdin = stdin, * fpstdout = stdout, * fpstderr = stderr;
@@ -38,9 +57,27 @@ void init() {
         std::cout << "[Info] Minhook initialized successfully.\n";
     }
     std::cout << "[Info] Initializing hooks. \n";
-    if (MH_CreateHookApi(L"opengl32", "glFlush", &detourGlFlush, fpGlFlush) != MH_OK) {
-        std::cout << "[Error] Enabling glFlush hook failed!\n";
+
+    if (MH_CreateHookApi(L"opengl32", "glFlush", &detourGlFlush, reinterpret_cast<LPVOID*>(&fpGlFlush)) != MH_OK) {
+        std::cout << "[Error] Creating glFlush hook failed!\n";
     }
+
+    if (MH_CreateHookApi(L"opengl32", "glClear", &detourGlClear, reinterpret_cast<LPVOID*>(&fpGlClear)) != MH_OK) {
+        std::cout << "[Error] Creating glClear hook failed! \n";
+    }
+
+    if (MH_CreateHookApi(L"opengl32", "glEnable", &detourGlEnable, reinterpret_cast<LPVOID*>(&fpGlEnable)) != MH_OK) {
+        std::cout << "[Error] Creating glEnable hook failed! \n";
+    }
+
+    if (MH_CreateHookApi(L"opengl32", "glDisable", &detourGlDisable, reinterpret_cast<LPVOID*>(&fpGlDisable)) != MH_OK) {
+        std::cout << "[Error] Creating glDisablehook failed! \n";
+    }
+    if (MH_CreateHookApi(L"user32", "RedrawWindow", &detourRedrawWindow, reinterpret_cast<LPVOID*>(&fpRedrawWindow)) != MH_OK) {
+        std::cout << "[Error] Creating RedrawWindow hook failed! \n";
+    }
+
+    std::cout << "[Info] Hook Initialization finished.";
 
 
     if (MH_EnableHook(MH_ALL_HOOKS) != MH_OK) {
