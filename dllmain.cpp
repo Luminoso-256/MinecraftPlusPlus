@@ -15,6 +15,7 @@ openGl::glDisable fpGlDisable = NULL;
 openGl::glEnable fpGlEnable = NULL;
 user32::RedrawWindow fpRedrawWindow = NULL;
 user32::GetKeyState fpGetKeyState = NULL;
+MinecraftPlus::mainLoop fpMainLoop = NULL;
 
 //Detour functions (start with detour)
 void detourGlFlush(){
@@ -35,6 +36,11 @@ void detourGlDisable() {
 
 void detourRedrawWindow() {
     fpRedrawWindow();
+}
+
+void detourMainLoop() {
+    std::cout << "[Info] Main Loop Function Called! \n";
+    fpMainLoop();
 }
 
 SHORT detourGetKeyState(int nVirtKey) {
@@ -65,6 +71,7 @@ void init() {
     }
     std::cout << "[Info] Initializing hooks. \n";
 
+    std::cout << "[Info] Initializing API hooks. \n";
     if (MH_CreateHookApi(L"opengl32", "glFlush", &detourGlFlush, reinterpret_cast<LPVOID*>(&fpGlFlush)) != MH_OK) {
         std::cout << "[Error] Creating glFlush hook failed!\n";
     }
@@ -86,6 +93,13 @@ void init() {
     if (MH_CreateHookApi(L"user32", "GetKeyState", &detourGetKeyState, reinterpret_cast<LPVOID*>(&fpGetKeyState)) != MH_OK) {
         std::cout << "[Error] Creating GetKeyState hook failed! \n";
     }
+
+    std::cout << "[Info] Initializing hooks for minecraftplus.exe module.\n";
+    //Main Loop
+    if (MH_CreateHook(reinterpret_cast<void*>(MinecraftPlus::mainLoopAddress), &detourMainLoop, reinterpret_cast<LPVOID*>(&fpMainLoop)) != MH_OK) {
+        std::cout << "[Info] Main Loop Hook Failed. \n";
+    }
+
 
     std::cout << "[Info] Hook Initialization finished.";
 
